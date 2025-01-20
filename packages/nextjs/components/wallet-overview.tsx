@@ -1,12 +1,7 @@
-'use client';
+"use client";
 
-import { Card } from "@/components/ui/card";
-import { 
-  Users, 
-  ShieldCheck, 
-  ArrowUpDown,
-  Wallet
-} from "lucide-react";
+import { ArrowUpDown, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Card } from "~~/components/ui/card";
 
 export function WalletOverview() {
   return (

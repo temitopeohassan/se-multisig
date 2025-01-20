@@ -1,26 +1,12 @@
-{`'use client';
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "~~/components/ui/button";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~~/components/ui/form";
+import { Input } from "~~/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 
 const formSchema = z.object({
   type: z.string(),
@@ -88,9 +74,7 @@ export function CreateTransaction() {
                 <FormControl>
                   <Input placeholder="0x..." {...field} />
                 </FormControl>
-                <FormDescription>
-                  The Ethereum address that will receive the transaction
-                </FormDescription>
+                <FormDescription>The Ethereum address that will receive the transaction</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -105,9 +89,7 @@ export function CreateTransaction() {
                 <FormControl>
                   <Input type="number" step="0.000000000000000001" {...field} />
                 </FormControl>
-                <FormDescription>
-                  The amount of ETH to send (leave empty for contract interactions)
-                </FormDescription>
+                <FormDescription>The amount of ETH to send (leave empty for contract interactions)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -122,9 +104,7 @@ export function CreateTransaction() {
                 <FormControl>
                   <Input placeholder="0x..." {...field} />
                 </FormControl>
-                <FormDescription>
-                  The transaction data for contract interactions
-                </FormDescription>
+                <FormDescription>The transaction data for contract interactions</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -137,4 +117,4 @@ export function CreateTransaction() {
       </Form>
     </div>
   );
-}`}
+}

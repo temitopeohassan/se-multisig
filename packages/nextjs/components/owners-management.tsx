@@ -1,16 +1,9 @@
-{`'use client';
+"use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { UserPlus, Shield } from "lucide-react";
+import { Shield, UserPlus } from "lucide-react";
+import { Badge } from "~~/components/ui/badge";
+import { Button } from "~~/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~~/components/ui/table";
 
 const owners = [
   {
@@ -39,9 +32,7 @@ export function OwnersManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold">Wallet Owners</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage the owners of this multisig wallet
-          </p>
+          <p className="text-sm text-muted-foreground">Manage the owners of this multisig wallet</p>
         </div>
         <Button>
           <UserPlus className="w-4 h-4 mr-2" />
@@ -60,7 +51,7 @@ export function OwnersManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {owners.map((owner) => (
+          {owners.map(owner => (
             <TableRow key={owner.address}>
               <TableCell className="font-mono">{owner.address}</TableCell>
               <TableCell>{owner.addedDate}</TableCell>
@@ -86,4 +77,4 @@ export function OwnersManagement() {
       </Table>
     </div>
   );
-}`}
+}

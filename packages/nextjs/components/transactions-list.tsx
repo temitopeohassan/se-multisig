@@ -1,16 +1,9 @@
-{`'use client';
+"use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Badge } from "~~/components/ui/badge";
+import { Button } from "~~/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~~/components/ui/table";
 
 const transactions = [
   {
@@ -61,20 +54,14 @@ export function TransactionsList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((tx) => (
+          {transactions.map(tx => (
             <TableRow key={tx.id}>
               <TableCell>{tx.type}</TableCell>
               <TableCell>{tx.amount}</TableCell>
               <TableCell className="font-mono">{tx.to}</TableCell>
               <TableCell>
                 <Badge
-                  variant={
-                    tx.status === "Executed"
-                      ? "default"
-                      : tx.status === "Pending"
-                      ? "secondary"
-                      : "destructive"
-                  }
+                  variant={tx.status === "Executed" ? "default" : tx.status === "Pending" ? "secondary" : "destructive"}
                 >
                   {tx.status}
                 </Badge>
@@ -102,4 +89,4 @@ export function TransactionsList() {
       </Table>
     </div>
   );
-}`}
+}
