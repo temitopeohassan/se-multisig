@@ -1,120 +1,165 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "~~/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~~/components/ui/form";
-import { Input } from "~~/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
+import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { ethers } from "ethers";
+import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
+import { useMultiSigWallet } from "~~/hooks/useMultiSigWallet";
+import { notification } from "~~/utils/scaffold-eth";
 
-const formSchema = z.object({
-  type: z.string(),
-  to: z.string().min(42, "Must be a valid Ethereum address"),
-  amount: z.string().optional(),
-  data: z.string().optional(),
-});
+type TransactionType = "transfer" | "addOwner" | "removeOwner" | "changeRequirement";
+
+interface TransactionData {
+  to: string;
+  value: string;
+  data: `0x${string}`;
+}
 
 export function CreateTransaction() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      type: "transfer",
-      to: "",
-      amount: "",
-      data: "",
-    },
+  const { submitNewTransaction } = useMultiSigWallet();
+  const { data: contractInfo } = useDeployedContractInfo("MultiSigWallet");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [txType, setTxType] = useState<TransactionType>("transfer");
+  const [formData, setFormData] = useState<TransactionData>({
+    to: "",
+    value: "0",
+    data: "0x" as `0x${string}`,
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
+  const generateTransactionData = (type: TransactionType, params: any = {}): TransactionData => {
+    if (!contractInfo?.address) return { to: "", value: "0", data: "0x" as `0x${string}` };
+
+    const iface = new ethers.Interface(contractInfo.abi);
+    const to = params.to || "";
+    const value = params.value || "0";
+
+    switch (type) {
+      case "transfer":
+        return {
+          to,
+          value,
+          data: "0x" as `0x${string}`,
+        };
+      case "addOwner":
+        return {
+          to: contractInfo.address,
+          value: "0",
+          data: iface.encodeFunctionData("addOwner", [to || ethers.ZeroAddress]) as `0x${string}`,
+        };
+      case "removeOwner":
+        return {
+          to: contractInfo.address,
+          value: "0",
+          data: iface.encodeFunctionData("removeOwner", [to || ethers.ZeroAddress]) as `0x${string}`,
+        };
+      case "changeRequirement":
+        return {
+          to: contractInfo.address,
+          value: "0",
+          data: iface.encodeFunctionData("changeRequirement", [Number(value) || 1]) as `0x${string}`,
+        };
+      default:
+        return { to: "", value: "0", data: "0x" as `0x${string}` };
+    }
+  };
+
+  useEffect(() => {
+    if (contractInfo?.address) {
+      setFormData(prevData => ({
+        ...prevData,
+        to: txType === "transfer" ? prevData.to : contractInfo.address,
+      }));
+    }
+  }, [contractInfo?.address, txType]);
+
+  const handleTypeChange = (type: TransactionType) => {
+    setTxType(type);
+    setFormData(generateTransactionData(type));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const valueInWei = ethers.parseEther(formData.value || "0");
+      await submitNewTransaction(formData.to, valueInWei, formData.data);
+      notification.success("Transaction submitted successfully!");
+      setFormData({ to: "", value: "0", data: "0x" as `0x${string}` });
+      setTxType("transfer");
+    } catch (error: any) {
+      console.error("Failed to submit transaction:", error);
+      notification.error(error.message || "Failed to submit transaction");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold">Create Transaction</h2>
-        <p className="text-sm text-muted-foreground">
-          Create a new multisig transaction that requires approval from other owners
-        </p>
+        <Label>Transaction Type</Label>
+        <Select value={txType} onValueChange={(value: TransactionType) => handleTypeChange(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select transaction type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="transfer">Transfer ETH</SelectItem>
+            <SelectItem value="addOwner">Add Owner</SelectItem>
+            <SelectItem value="removeOwner">Remove Owner</SelectItem>
+            <SelectItem value="changeRequirement">Change Required Signatures</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Transaction Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select transaction type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="transfer">Transfer ETH</SelectItem>
-                    <SelectItem value="addOwner">Add Owner</SelectItem>
-                    <SelectItem value="removeOwner">Remove Owner</SelectItem>
-                    <SelectItem value="changeRequirement">Change Requirement</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div>
+        <Label htmlFor="to">
+          {txType === "transfer"
+            ? "Destination Address"
+            : txType === "changeRequirement"
+              ? "Required Signatures"
+              : "Owner Address"}
+        </Label>
+        <Input
+          id="to"
+          value={formData.to}
+          onChange={e => {
+            const newData = generateTransactionData(txType, { to: e.target.value });
+            setFormData(newData);
+          }}
+          placeholder={txType === "changeRequirement" ? "Number of required signatures" : "0x..."}
+          type={txType === "changeRequirement" ? "number" : "text"}
+          required
+        />
+      </div>
 
-          <FormField
-            control={form.control}
-            name="to"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>To Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="0x..." {...field} />
-                </FormControl>
-                <FormDescription>The Ethereum address that will receive the transaction</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+      {txType === "transfer" && (
+        <div>
+          <Label htmlFor="value">Value (ETH)</Label>
+          <Input
+            id="value"
+            type="number"
+            step="any"
+            value={formData.value}
+            onChange={e => setFormData({ ...formData, value: e.target.value })}
+            placeholder="0.0"
+            required
           />
+        </div>
+      )}
 
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount (ETH)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.000000000000000001" {...field} />
-                </FormControl>
-                <FormDescription>The amount of ETH to send (leave empty for contract interactions)</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      {txType !== "transfer" && (
+        <div>
+          <Label htmlFor="data">Transaction Data (Generated)</Label>
+          <Input id="data" value={formData.data} readOnly className="font-mono text-sm bg-muted" />
+        </div>
+      )}
 
-          <FormField
-            control={form.control}
-            name="data"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="0x..." {...field} />
-                </FormControl>
-                <FormDescription>The transaction data for contract interactions</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" className="w-full">
-            Create Transaction
-          </Button>
-        </form>
-      </Form>
-    </div>
+      <Button type="submit" disabled={isSubmitting} className="w-full">
+        {isSubmitting ? "Submitting..." : "Submit Transaction"}
+      </Button>
+    </form>
   );
 }
